@@ -1,0 +1,668 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>泣き声ナビ</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+[hidden] { display: none !important; }
+/* Layout: one calm column. Step 1 (sound) -> Step 2 (situation) -> result with care steps -> medical note. */
+:root {
+  --bg: #F1F6F5;
+  --surface: #FFFFFF;
+  --surface-2: #E7EFEE;
+  --ink: #16302F;
+  --ink-2: #4A6362;
+  --line: #D2DEDC;
+  --accent: #1D7A71;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #D5ECE8;
+  --accent-strong: #145E56;
+  --bar-muted: #BCCCCA;
+  --warn-bg: #FCEDE8;
+  --warn-ink: #80301D;
+  --warn-line: #F0CABF;
+  --font-display: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-body: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1B1B; --surface: #16282A; --surface-2: #1E3335; --ink: #E3EFEE; --ink-2: #9DB5B3; --line: #2A4244;
+    --accent: #5CC3B8; --accent-ink: #072220; --accent-soft: #1C3A3A; --accent-strong: #8EDCD2; --bar-muted: #3C5A5C;
+    --warn-bg: #3A201B; --warn-ink: #F4B9A9; --warn-line: #5E3329;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1B1B; --surface: #16282A; --surface-2: #1E3335; --ink: #E3EFEE; --ink-2: #9DB5B3; --line: #2A4244;
+  --accent: #5CC3B8; --accent-ink: #072220; --accent-soft: #1C3A3A; --accent-strong: #8EDCD2; --bar-muted: #3C5A5C;
+  --warn-bg: #3A201B; --warn-ink: #F4B9A9; --warn-line: #5E3329;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.75 var(--font-body);
+  word-break: auto-phrase;
+  padding-block: 22px 44px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 640px; margin: 0 auto; display: grid; gap: 14px; }
+.wrap > * { min-width: 0; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; line-height: 1.4; text-wrap: balance; }
+h1 { font-size: 28px; letter-spacing: 0.02em; }
+h2 { font-size: 18px; }
+h3 { font-size: 15px; margin-top: 6px; }
+p { margin: 0; }
+.lead { color: var(--ink-2); margin-top: 6px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 14px; }
+.card > * { min-width: 0; }
+.step { display: inline-block; font: 700 11px/1 var(--font-body); letter-spacing: 0.12em; color: var(--accent-strong); background: var(--accent-soft); border-radius: 999px; padding: 6px 10px; margin-right: 8px; vertical-align: 2px; }
+.help { color: var(--ink-2); font-size: 13.5px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 20px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 700 15px/1 var(--font-body); cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.small { min-height: 36px; padding: 0 14px; font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.btn:hover { filter: brightness(0.97); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.filebtn:focus-within, .btn:focus-visible, .rank:focus-visible, .chip input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+.status { font-size: 13.5px; color: var(--ink-2); min-height: 1.6em; }
+.status.err { color: var(--warn-ink); }
+fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 8px; min-width: 0; }
+legend { padding: 0; font-size: 13px; font-weight: 700; color: var(--ink-2); margin-bottom: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { position: relative; }
+.chip input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.chip span { display: inline-block; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 14px; line-height: 1.4; }
+.chip input:checked + span { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-strong); font-weight: 700; }
+.groups { display: grid; gap: 16px; }
+.banner { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; font-size: 13px; color: var(--ink-2); }
+.verdict { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.eyebrow { font-size: 12px; letter-spacing: 0.08em; color: var(--ink-2); font-weight: 700; }
+.topname { font-size: 30px; margin-top: 2px; }
+.pct { font: 700 40px/1 var(--font-display); color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pct small { font-size: 18px; margin-left: 2px; }
+.note { color: var(--ink-2); font-size: 14px; margin-top: 4px; }
+.why { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.why li { position: relative; padding-left: 18px; font-size: 14px; }
+.why li::before { content: ""; position: absolute; left: 3px; top: 0.7em; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.wave { display: grid; gap: 4px; }
+.wave canvas { width: 100%; height: 84px; display: block; border-radius: 10px; background: var(--surface-2); }
+.axis { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 0; }
+.stats div { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.stats dt { font-size: 12px; color: var(--ink-2); }
+.stats dd { margin: 0; font: 700 19px/1.4 var(--font-display); font-variant-numeric: tabular-nums; }
+.ranks { display: grid; gap: 4px; }
+.rank { display: grid; grid-template-columns: 7.5em 1fr 3em; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 8px 10px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--ink); font: 500 14px/1.4 var(--font-body); cursor: pointer; }
+.rank[aria-pressed="true"] { background: var(--surface-2); border-color: var(--line); }
+.track { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.rank[aria-pressed="true"] .track { background: var(--bg); }
+.fill { display: block; height: 100%; border-radius: 4px; background: var(--bar-muted); }
+.rank.top .fill { background: var(--accent); }
+.rank .v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+.hint { font-size: 12.5px; color: var(--ink-2); }
+.care { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; counter-reset: s; }
+.care li { counter-increment: s; position: relative; padding-left: 40px; }
+.care li::before { content: counter(s); position: absolute; left: 0; top: 1px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-strong); font: 700 14px/28px var(--font-display); text-align: center; }
+.care b { display: block; font-size: 15px; }
+.care span { display: block; color: var(--ink-2); font-size: 14px; }
+.next { background: var(--accent-soft); color: var(--accent-strong); border-radius: 12px; padding: 12px 14px; font-size: 14px; font-weight: 500; }
+.alert { background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-ink); border-radius: 16px; padding: 16px 18px; display: grid; gap: 8px; }
+.alert h2 { font-size: 16px; }
+.alert ul { margin: 0; padding-left: 1.2em; font-size: 14px; }
+.alert li { margin-top: 2px; }
+.foot { font-size: 12.5px; color: var(--ink-2); }
+@media (max-width: 420px) {
+  .rank { grid-template-columns: 6.6em 1fr 2.8em; gap: 8px; }
+  .topname { font-size: 26px; }
+  .pct { font-size: 34px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+.meter { display: flex; align-items: center; gap: 10px; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-2); }
+.meter .bar { flex: 1; height: 10px; border-radius: 5px; background: var(--surface-2); overflow: hidden; }
+.meter .bar i { display: block; height: 100%; width: 0; background: var(--accent); }
+.btn.recording { background: var(--warn-ink); border-color: var(--warn-ink); color: var(--warn-bg); }
+</style>
+</head>
+<body>
+
+<main class="wrap">
+  <header>
+    <h1>泣き声ナビ</h1>
+    <p class="lead">泣き声の録音と、いまの状況から、泣いている理由の見当と対処法を出します。</p>
+  </header>
+
+  <section class="card" aria-labelledby="s1">
+    <h2 id="s1"><span class="step">STEP 1</span>泣き声を入れる</h2>
+    <p class="help">赤ちゃんの近く（30cmほど）で10秒以上録音します。音はこのページの中だけで解析され、外には送られません。</p>
+    <div class="row">
+      <button id="recBtn" class="btn primary" type="button">● 録音する</button>
+      <label class="btn filebtn" for="file">ファイルを選ぶ</label>
+      <input id="file" class="sr" type="file" accept="audio/*,video/*">
+      <button id="sampleBtn" class="btn" type="button">サンプル音</button>
+    </div>
+    <div id="meter" class="meter" hidden><span class="bar"><i id="meterFill"></i></span><span id="recTime">0:00</span></div>
+    <p id="status" class="status" role="status"></p>
+  </section>
+
+  <section class="card" aria-labelledby="s2">
+    <h2 id="s2"><span class="step">STEP 2</span>いまの状況</h2>
+    <p class="help">選ぶほど当たりやすくなります。選ぶと結果がすぐ変わります（任意）。</p>
+    <div id="groups" class="groups"></div>
+    <div class="row"><button id="clearBtn" class="btn small" type="button">選択をクリア</button></div>
+  </section>
+
+  <section id="result" class="card" aria-live="polite" aria-label="判定結果">
+    <p id="banner" class="banner" hidden>いまはサンプル音の結果です。音声ファイルを選ぶと、あなたの録音の結果に置き換わります。</p>
+    <div class="verdict">
+      <div>
+        <p class="eyebrow">いちばん可能性が高い理由</p>
+        <h2 id="topName" class="topname"></h2>
+      </div>
+      <p id="topPct" class="pct"></p>
+    </div>
+    <p id="topNote" class="note"></p>
+    <ul id="why" class="why"></ul>
+    <div class="wave">
+      <canvas id="cv" aria-label="録音の音の強さ。色の付いた部分が泣いている区間"></canvas>
+      <div class="axis"><span>0秒</span><span id="endSec"></span></div>
+    </div>
+    <dl id="stats" class="stats"></dl>
+    <h3>可能性の内訳</h3>
+    <div id="ranks" class="ranks"></div>
+    <p class="hint">項目をタップすると、その理由の対処法に切り替わります。</p>
+    <h3 id="careTitle"></h3>
+    <ol id="care" class="care"></ol>
+    <p id="next" class="next"></p>
+  </section>
+
+  <aside class="alert" aria-labelledby="alertT">
+    <h2 id="alertT">こんなときは受診・相談を</h2>
+    <ul>
+      <li>生後3か月未満で38℃以上の熱がある</li>
+      <li>顔色が悪い、唇が紫っぽい、呼吸が苦しそう、ぐったりして反応が弱い</li>
+      <li>いつもと全く違う泣き方が続く。吐く、血便、お腹が硬く張る、間をおいて激しく泣くことを繰り返す</li>
+      <li>母乳・ミルクを飲まない、おしっこが極端に少ない</li>
+      <li>頭を打ったあとに吐く、泣き止まない</li>
+    </ul>
+    <p>迷ったら小児救急電話相談 <b>#8000</b>（夜間・休日）。急を要するときは <b>119</b>。</p>
+  </aside>
+
+  <p class="foot">このツールは診断ではありません。泣き声だけで理由を確実に当てることは専門家にも難しく、結果は声の特徴と状況から出した目安です。ひとつずつ試しながら、赤ちゃんに合う方法を探してください。</p>
+</main>
+
+<script>
+// <core>
+const CATS = ['hunger', 'pain', 'tired', 'discomfort', 'burp', 'hold'];
+const sig = (x, m, w) => 1 / (1 + Math.exp(-(x - m) / w));
+const mean = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0;
+const std = a => { if (a.length < 2) return 0; const m = mean(a); return Math.sqrt(mean(a.map(v => (v - m) * (v - m)))); };
+const pct = (a, p) => { if (!a.length) return 0; const s = Array.from(a).sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(p * s.length))]; };
+
+function analyze(samples, sr) {
+  const maxN = Math.min(samples.length, Math.floor(sr * 45));
+  let x = samples.subarray(0, maxN), fs = sr;
+  const dec = sr >= 32000 ? Math.round(sr / 16000) : 1;
+  if (dec > 1) {
+    const n = Math.floor(x.length / dec), y = new Float32Array(n);
+    for (let i = 0; i < n; i++) { let s = 0; for (let k = 0; k < dec; k++) s += x[i * dec + k]; y[i] = s / dec; }
+    x = y; fs = sr / dec;
+  }
+  const win = Math.round(fs * 0.05), hop = Math.round(fs * 0.025), hopSec = hop / fs;
+  const nF = Math.floor((x.length - win) / hop) + 1;
+  if (nF < 40) return { error: 'short' };
+  const rms = new Float32Array(nF);
+  for (let f = 0; f < nF; f++) {
+    const o = f * hop; let m = 0;
+    for (let i = 0; i < win; i++) m += x[o + i];
+    m /= win; let e = 0;
+    for (let i = 0; i < win; i++) { const v = x[o + i] - m; e += v * v; }
+    rms[f] = Math.sqrt(e / win);
+  }
+  const noise = pct(rms, 0.1), peak = pct(rms, 0.95);
+  if (peak < 0.003) return { error: 'quiet' };
+  const thr = Math.max(noise * 3, peak * 0.2);
+
+  const lagMin = Math.floor(fs / 900), lagMax = Math.min(Math.ceil(fs / 200), win - 2);
+  const per = new Float32Array(nF), f0 = new Float32Array(nF);
+  const fr = new Float32Array(win), r = new Float32Array(lagMax + 2);
+  for (let f = 0; f < nF; f++) {
+    if (rms[f] <= thr) continue;
+    const o = f * hop; let m = 0;
+    for (let i = 0; i < win; i++) m += x[o + i];
+    m /= win;
+    for (let i = 0; i < win; i++) fr[i] = x[o + i] - m;
+    let rmax = 0, bestLag = 0;
+    for (let l = lagMin; l <= lagMax; l++) {
+      let s = 0, a = 0, b = 0;
+      for (let i = 0; i < win - l; i++) { s += fr[i] * fr[i + l]; a += fr[i] * fr[i]; b += fr[i + l] * fr[i + l]; }
+      const v = s / Math.sqrt(a * b + 1e-12);
+      r[l] = v;
+      if (v > rmax) { rmax = v; bestLag = l; }
+    }
+    let lag = bestLag;
+    for (let l = lagMin + 1; l < lagMax; l++) {
+      if (r[l] >= 0.9 * rmax && r[l] >= r[l - 1] && r[l] >= r[l + 1]) { lag = l; break; }
+    }
+    per[f] = rmax; f0[f] = fs / lag;
+  }
+
+  const act = new Uint8Array(nF);
+  for (let f = 0; f < nF; f++) act[f] = rms[f] > thr ? 1 : 0;
+  const gapMax = Math.round(0.25 / hopSec);
+  let f = 0;
+  while (f < nF) {
+    if (act[f]) { f++; continue; }
+    let g = f; while (g < nF && !act[g]) g++;
+    if (f > 0 && g < nF && (g - f) <= gapMax) for (let k = f; k < g; k++) act[k] = 1;
+    f = g;
+  }
+  const minB = Math.round(0.2 / hopSec), bursts = [];
+  f = 0;
+  while (f < nF) {
+    if (!act[f]) { f++; continue; }
+    let g = f; while (g < nF && act[g]) g++;
+    if (g - f >= minB) bursts.push([f, g]); else for (let k = f; k < g; k++) act[k] = 0;
+    f = g;
+  }
+  let activeFrames = 0; for (let k = 0; k < nF; k++) activeFrames += act[k];
+  const activeSec = activeFrames * hopSec;
+  if (!bursts.length || activeSec < 1) return { error: 'nocry' };
+
+  const durs = bursts.map(b => (b[1] - b[0]) * hopSec);
+  const pauses = [];
+  for (let i = 1; i < bursts.length; i++) pauses.push((bursts[i][0] - bursts[i - 1][1]) * hopSec);
+  const cyc = [];
+  for (let i = 1; i < bursts.length; i++) cyc.push((bursts[i][0] - bursts[i - 1][0]) * hopSec);
+  const span = (bursts[bursts.length - 1][1] - bursts[0][0]) * hopSec;
+  let spanAct = 0;
+  for (let k = bursts[0][0]; k < bursts[bursts.length - 1][1]; k++) spanAct += act[k];
+  const activeRatio = Math.min(1, spanAct * hopSec / Math.max(span, 0.1));
+
+  const voicedF0 = []; let origAct = 0, voiced = 0;
+  for (let k = 0; k < nF; k++) {
+    if (act[k] && rms[k] > thr) {
+      origAct++;
+      if (per[k] > 0.5 && f0[k] >= 200 && f0[k] <= 900) { voiced++; voicedF0.push(f0[k]); }
+    }
+  }
+  const peaks = bursts.map(b => { let p = 0; for (let k = b[0]; k < b[1]; k++) if (rms[k] > p) p = rms[k]; return p; });
+  let rise = 1;
+  if (bursts.length >= 4) {
+    const t = Math.floor(peaks.length / 3);
+    rise = mean(peaks.slice(-t)) / Math.max(mean(peaks.slice(0, t)), 1e-9);
+  }
+  const F = {
+    activeSec, span, bursts: bursts.length,
+    meanBurst: mean(durs),
+    meanPause: pauses.length ? mean(pauses) : null,
+    cycleCV: cyc.length >= 2 ? std(cyc) / Math.max(mean(cyc), 1e-9) : null,
+    activeRatio,
+    bpm: bursts.length / Math.max(span, 3) * 60,
+    f0Mean: voicedF0.length >= 5 ? mean(voicedF0) : null,
+    f0Std: voicedF0.length >= 5 ? std(voicedF0) : null,
+    noisy: origAct ? 1 - voiced / origAct : 0.5,
+    rise
+  };
+  return { F, rms, act, hopSec, dur: x.length / fs, ref: pct(rms, 0.99) };
+}
+
+function score(F, C) {
+  const logit = { hunger: 0.3, pain: 0, tired: 0.2, discomfort: 0.3, burp: -0.3, hold: 0.2 };
+  const why = {}; CATS.forEach(c => why[c] = []);
+  const add = (c, w, m, label) => { logit[c] += w * m; if (label) why[c].push({ label, v: w * m }); };
+  const f0 = F.f0Mean;
+  const hz = f0 == null ? '' : '（平均 ' + Math.round(f0) + 'Hz）';
+  const hi = f0 == null ? 0.5 : sig(f0, 480, 70);
+  const lo = f0 == null ? 0.5 : 1 - sig(f0, 380, 50);
+  const mid = f0 == null ? 0.5 : Math.exp(-Math.pow((f0 - 420) / 90, 2));
+  const longB = sig(F.meanBurst, 1.6, 0.4);
+  const shortB = 1 - sig(F.meanBurst, 1.0, 0.25);
+  const single = F.meanPause == null;
+  const shortP = single ? 0.7 : 1 - sig(F.meanPause, 0.6, 0.2);
+  const longP = single ? 0.2 : sig(F.meanPause, 1.1, 0.35);
+  const rhythm = F.cycleCV == null ? 0.4 : 1 - sig(F.cycleCV, 0.35, 0.1);
+  const irreg = F.cycleCV == null ? 0.5 : sig(F.cycleCV, 0.45, 0.1);
+  const cont = sig(F.activeRatio, 0.75, 0.1);
+  const vary = F.f0Std == null ? 0.5 : sig(F.f0Std, 90, 25);
+  const noisy = sig(F.noisy, 0.45, 0.1);
+  const rising = sig(F.rise, 1.25, 0.15);
+  const freq = sig(F.bpm, 14, 4);
+
+  add('hunger', 1.4, rhythm, '一定のリズムで泣きを繰り返している');
+  add('hunger', 0.8, rising, '泣きが少しずつ強まっている');
+  add('hunger', 0.6, mid, '声の高さは標準的' + hz);
+  add('pain', 1.6, hi, '声が高め' + hz);
+  add('pain', 0.9, longB, '1回の泣きが長い');
+  add('pain', 0.8, vary, '声の高さの揺れが大きい');
+  add('pain', 0.8, cont, '休みが少なく泣き続けている');
+  add('tired', 0.9, noisy, '声がかすれ気味で、ぐずるような泣き方');
+  add('tired', 0.7, lo, '声が低めで控えめ' + hz);
+  add('tired', 0.5, irreg, '泣き方にムラがある');
+  add('discomfort', 0.8, irreg, '泣き方に波がある');
+  add('discomfort', 0.7, shortB, '短い泣きが続いている');
+  add('discomfort', 0.5, lo, '声は控えめ' + hz);
+  add('discomfort', 0.4, noisy, 'ぐずるような声');
+  add('burp', 1.2, shortB, '短く区切れた泣き方');
+  add('burp', 0.6, freq, '短い間隔で何度も泣いている');
+  add('burp', 0.5, shortP, '泣きの合間の休みが短い');
+  add('hold', 1.0, longP, '泣いては休み、様子をうかがうような間がある');
+  add('hold', 0.5, irreg, '泣き方にムラがある');
+  add('hold', 0.4, lo, '声は控えめ' + hz);
+
+  const age = C.age || 'a1';
+  const expFeed = { a0: 2.5, a1: 3, a2: 3.5, a3: 4 }[age];
+  const winAwake = { a0: 1, a1: 1.5, a2: 2, a3: 2.5 }[age];
+  if (C.feed != null) {
+    const h = C.feed;
+    add('hunger', 2.2, sig(h, expFeed - 0.7, 0.45), '前回の授乳から' + C.feedLabel + '（この月齢の目安は' + expFeed + '時間おき）');
+    if (h <= 0.5) add('hunger', -1.0, 1, null);
+    if (h <= 0.4) add('burp', 2.4, 1, '授乳の直後で、げっぷが残っているかもしれない');
+    else if (h <= 1.0) add('burp', 1.2, 1, '授乳から1時間以内');
+    if (h <= 1.0) add('pain', 0.6, 1, '授乳後でガスが溜まっているかもしれない');
+  }
+  if (C.awake != null) {
+    add('tired', 2.2, sig(C.awake, winAwake - 0.2, 0.3), '起きてから' + C.awakeLabel + '（この月齢は' + Math.round(winAwake * 60) + '分前後で眠くなりやすい）');
+    if (C.awake <= 0.5) add('tired', -0.6, 1, null);
+  }
+  if (C.diaper === 'dirty') add('discomfort', 2.4, 1, 'おむつが濡れている・汚れている');
+  else if (C.diaper === 'unknown') add('discomfort', 0.7, 1, 'おむつをまだ確認していない');
+  else if (C.diaper === 'clean') add('discomfort', -0.4, 1, null);
+
+  const ex = CATS.map(c => Math.exp(logit[c]));
+  const sum = ex.reduce((a, b) => a + b, 0);
+  const p = {}; CATS.forEach((c, i) => p[c] = ex[i] / sum);
+  const order = CATS.slice().sort((a, b) => p[b] - p[a]);
+  CATS.forEach(c => why[c].sort((a, b) => b.v - a.v));
+  return { p, order, why };
+}
+
+function synth(o) {
+  const p = Object.assign({ sr: 16000, dur: 16, on: 1.2, off: 0.55, f0: 400, glide: 60, noise: 0.004, hiss: 0, jit: 0.12, grow: 0.5, amp: 0.3, start: 0.5, seed: 7 }, o || {});
+  let s = p.seed;
+  const rnd = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
+  const n = Math.floor(p.sr * p.dur), x = new Float32Array(n);
+  let t = p.start, phase = 0;
+  while (t < p.dur - 0.3) {
+    const on = Math.max(0.3, p.on * (1 + (rnd() - 0.5) * 2 * p.jit));
+    const a0 = p.amp * (1 + p.grow * Math.min(1, t / p.dur));
+    const i0 = Math.floor(t * p.sr), i1 = Math.min(n, Math.floor((t + on) * p.sr));
+    for (let i = i0; i < i1; i++) {
+      const u = (i - i0) / (i1 - i0), tt = i / p.sr;
+      const f = p.f0 + p.glide * u + 8 * Math.sin(2 * Math.PI * 5 * tt);
+      phase += 2 * Math.PI * f / p.sr;
+      const env = Math.min(1, (i - i0) / (0.04 * p.sr)) * Math.min(1, (i1 - i) / (0.08 * p.sr)) * (0.8 + 0.2 * Math.sin(Math.PI * u));
+      let v = 0; for (let h = 1; h <= 8; h++) v += Math.sin(h * phase) / h;
+      x[i] += a0 * env * (v * 0.45 + p.hiss * (rnd() - 0.5) * 2);
+    }
+    t += on + Math.max(0.15, p.off * (1 + (rnd() - 0.5) * 2 * p.jit));
+  }
+  for (let i = 0; i < n; i++) x[i] += (rnd() - 0.5) * 2 * p.noise;
+  return { x, sr: p.sr };
+}
+// </core>
+
+(function () {
+  const $ = id => document.getElementById(id);
+  const el = (t, a, ...k) => {
+    const e = document.createElement(t);
+    if (a) for (const [n, v] of Object.entries(a)) {
+      if (n === 'class') e.className = v;
+      else if (n === 'text') e.textContent = v;
+      else if (v === true) e.setAttribute(n, '');
+      else if (v !== false && v != null) e.setAttribute(n, v);
+    }
+    for (const c of k.flat()) if (c != null) e.append(c);
+    return e;
+  };
+
+  const CARE = {
+    hunger: { name: 'お腹が空いた', steps: [
+      ['授乳・ミルクをあげる', '母乳は左右とも、ミルクは作り方どおりの量から。泣きが強いときは、少し抱いて落ち着かせてからのほうが飲みやすくなります。'],
+      ['飲んだあとはげっぷ', '縦抱きにして背中をさすり、飲み込んだ空気を出します。'],
+      ['飲んでも泣くとき', '間隔が短すぎないか、飲めている量が足りているかを見て、おむつや眠気など他の理由も確認します。'],
+      ['次からは早めに', '手を口に持っていく、口をパクパクする、舌を出すは空腹の初期サイン。泣く前に気づけると飲ませやすくなります。']
+    ] },
+    pain: { name: 'お腹が痛い', steps: [
+      ['縦抱きにしてげっぷを促す', '肩に顎をのせる形で抱き、背中を下から上へゆっくりさすります。'],
+      ['お腹を温めて「の」の字マッサージ', '手のひらを温めてから、おへその周りを時計回りに、力を入れずゆっくりなでます。'],
+      ['足の曲げ伸ばし（自転車こぎ）', '仰向けで両膝を軽く曲げ伸ばしすると、ガスが出やすくなります。'],
+      ['ミルクの作り方と乳首を確認', '濃さや量が合っているか、乳首の穴が大きすぎないかも見直します。'],
+      ['腹ばいで抱くときは目を離さない', '腕にお腹をのせる抱き方は楽になることがありますが、寝かせるときは必ず仰向けにします。']
+    ] },
+    tired: { name: '疲れた・眠い', steps: [
+      ['刺激を減らす', '部屋を薄暗く静かにして、テレビやスマホ、明るい照明を消します。'],
+      ['抱っこで安心させる', '抱いてゆらゆら、背中や胸を一定のリズムでトントン。「シー」という声や、ホワイトノイズも落ち着きやすい音です。'],
+      ['おくるみを使うなら', '寝返りをする前の時期だけにし、足は自由に動かせるゆるさで巻きます。'],
+      ['寝かせるときは仰向けで固めの寝具', '窒息を防ぐため、ふわふわの枕やぬいぐるみ、厚い掛け布団は置きません。'],
+      ['次からは早めに', 'あくび、目をこする、ぼんやりするは眠いサイン。泣く前に寝かせると寝つきやすくなります。']
+    ] },
+    discomfort: { name: '不快', steps: [
+      ['おむつを確認', '濡れていたら交換し、おしりを拭きます。赤みがあるときは乾かしてから新しいおむつを。'],
+      ['暑い・寒いを確認', '首の後ろか背中を触ります。汗ばんでいれば1枚減らし、冷たければ1枚足します。手足の冷たさでは判断しません。室温は20〜25℃が目安です。'],
+      ['服と身のまわりを確認', 'タグや縫い目、きつい袖口、指や足の指に髪の毛や糸が巻き付いていないか、まぶしさや音も見ます。'],
+      ['体勢を変えて抱っこ', '寝かせたままだった場合は、抱いて姿勢を変えるだけで落ち着くことがあります。']
+    ] },
+    burp: { name: 'げっぷ', steps: [
+      ['縦抱きにして背中をさする', '肩に顎をのせて、背中を下から上へさするか、軽くトントンします。'],
+      ['膝に座らせる姿勢も試す', '片手で胸と顎を支えて少し前かがみに座らせ、背中をさすります。'],
+      ['5〜10分試して出なければ', '無理に出さなくて大丈夫です。吐き戻しやすい子は、しばらく縦抱きのままにしてから寝かせます。']
+    ] },
+    hold: { name: '抱っこしてほしい', steps: [
+      ['抱き上げて声をかける', 'ゆっくり話しかけながら抱っこします。抱き癖は気にしなくて大丈夫です。'],
+      ['ゆらゆら・散歩', '抱っこひもでの室内の散歩や、窓の外を見せるのも気分が変わります。'],
+      ['それでも落ち着かないとき', '空腹・眠気・おむつ・暑さ寒さを順に確認します。']
+    ] }
+  };
+
+  const GROUPS = [
+    { name: 'age', legend: '月齢', opts: [['a0', '0〜1か月'], ['a1', '2〜3か月'], ['a2', '4〜6か月'], ['a3', '7か月〜']] },
+    { name: 'feed', legend: '最後の授乳から', opts: [['0.25', '30分以内'], ['0.75', '30分〜1時間'], ['1.5', '1〜2時間'], ['2.5', '2〜3時間'], ['3.5', '3時間以上']] },
+    { name: 'awake', legend: '起きてから', opts: [['0.5', '45分未満'], ['1.1', '45〜90分'], ['1.75', '90分〜2時間'], ['2.5', '2時間以上']] },
+    { name: 'diaper', legend: 'おむつ', opts: [['dirty', '濡れ・汚れあり'], ['clean', 'きれい'], ['unknown', '未確認']] }
+  ];
+
+  const state = { A: null, S: null, sel: null, sample: false };
+
+  GROUPS.forEach(g => {
+    const chips = el('div', { class: 'chips' });
+    g.opts.forEach(([v, label]) => {
+      const inp = el('input', { type: 'radio', name: g.name, value: v, 'data-label': label });
+      chips.append(el('label', { class: 'chip' }, inp, el('span', { text: label })));
+    });
+    $('groups').append(el('fieldset', null, el('legend', { text: g.legend }), chips));
+  });
+  try { const a = localStorage.getItem('cryNaviAge'); if (a) { const i = document.querySelector('input[name=age][value="' + a + '"]'); if (i) i.checked = true; } } catch (e) {}
+
+  function readCtx() {
+    const q = n => document.querySelector('input[name=' + n + ']:checked');
+    const age = q('age'), feed = q('feed'), awake = q('awake'), diaper = q('diaper');
+    return {
+      age: age ? age.value : null,
+      feed: feed ? parseFloat(feed.value) : null, feedLabel: feed ? feed.dataset.label : '',
+      awake: awake ? parseFloat(awake.value) : null, awakeLabel: awake ? awake.dataset.label : '',
+      diaper: diaper ? diaper.value : null
+    };
+  }
+
+  function setStatus(t, err) { const s = $('status'); s.textContent = t; s.className = 'status' + (err ? ' err' : ''); }
+
+  function drawWave() {
+    const A = state.A; if (!A) return;
+    const cv = $('cv'), w = cv.clientWidth || 320, h = 84, dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+    const cs = getComputedStyle(document.documentElement);
+    const colAct = cs.getPropertyValue('--accent').trim(), colIdle = cs.getPropertyValue('--bar-muted').trim();
+    const nF = A.rms.length, step = 3, cols = Math.max(10, Math.floor(w / step));
+    for (let c = 0; c < cols; c++) {
+      const a = Math.floor(c * nF / cols), b = Math.max(a + 1, Math.floor((c + 1) * nF / cols));
+      let m = 0, on = 0;
+      for (let k = a; k < b && k < nF; k++) { if (A.rms[k] > m) m = A.rms[k]; if (A.act[k]) on = 1; }
+      const bh = Math.max(2, Math.sqrt(Math.min(1, m / (A.ref || 1))) * (h - 14));
+      g.fillStyle = on ? colAct : colIdle;
+      g.fillRect(c * step, (h - bh) / 2, 2, bh);
+    }
+    $('endSec').textContent = A.dur.toFixed(1) + '秒';
+  }
+
+  function renderCare() {
+    const S = state.S, sel = state.sel, top = S.order[0], sec = S.order[1];
+    $('careTitle').textContent = CARE[sel].name + 'のときの対処法';
+    const ol = $('care'); ol.replaceChildren();
+    CARE[sel].steps.forEach(([t, d]) => ol.append(el('li', null, el('b', { text: t }), el('span', { text: d }))));
+    $('next').textContent = sel === top
+      ? 'うまくいかないときは、次に可能性が高い「' + CARE[sec].name + '」（' + Math.round(S.p[sec] * 100) + '%）も試してください。'
+      : '最有力は「' + CARE[top].name + '」です。内訳から切り替えて見比べられます。';
+    document.querySelectorAll('.rank').forEach(b => b.setAttribute('aria-pressed', b.dataset.cat === sel ? 'true' : 'false'));
+  }
+
+  function render() {
+    const A = state.A; if (!A) return;
+    const F = A.F, C = readCtx(), S = score(F, C);
+    state.S = S; state.sel = S.order[0];
+    const top = S.order[0], sec = S.order[1], p1 = S.p[top], gap = p1 - S.p[sec];
+    $('banner').hidden = !state.sample;
+    $('topName').textContent = CARE[top].name;
+    const pe = $('topPct'); pe.textContent = String(Math.round(p1 * 100)); pe.append(el('small', { text: '%' }));
+    let note = (p1 >= 0.45 && gap >= 0.1) ? 'この理由の可能性が高めです。まず試してみてください。' : '決め手に欠けます。上位2つを順に試してください。';
+    if (F.span < 5) note += ' 録音が短いため、リズムの判定は参考程度です。';
+    $('topNote').textContent = note;
+    const why = $('why'); why.replaceChildren();
+    const ws = S.why[top].filter(w => w.v >= 0.45).slice(0, 3);
+    if (ws.length) ws.forEach(w => why.append(el('li', { text: w.label })));
+    else why.append(el('li', { text: '決め手になる特徴は少なめです。状況を選ぶと精度が上がります。' }));
+
+    const stats = $('stats'); stats.replaceChildren();
+    [['声の高さ', F.f0Mean == null ? '—' : Math.round(F.f0Mean) + ' Hz'],
+     ['1回の泣き', F.meanBurst.toFixed(1) + ' 秒'],
+     ['泣きの合間', F.meanPause == null ? '—' : F.meanPause.toFixed(1) + ' 秒'],
+     ['回数', Math.round(F.bpm) + ' 回/分']].forEach(([k, v]) =>
+      stats.append(el('div', null, el('dt', { text: k }), el('dd', { text: v }))));
+
+    const ranks = $('ranks'); ranks.replaceChildren();
+    S.order.forEach((c, i) => {
+      const pc = Math.round(S.p[c] * 100);
+      const fill = el('i', { class: 'fill' }); fill.style.width = Math.max(2, pc) + '%';
+      const b = el('button', { type: 'button', class: 'rank' + (i === 0 ? ' top' : ''), 'data-cat': c, 'aria-pressed': 'false' },
+        el('span', { text: CARE[c].name }), el('span', { class: 'track' }, fill), el('span', { class: 'v', text: pc + '%' }));
+      b.addEventListener('click', () => { state.sel = c; renderCare(); });
+      ranks.append(b);
+    });
+    renderCare();
+    drawWave();
+  }
+
+  function toMono(buf) {
+    const n = buf.length, ch = buf.numberOfChannels, out = new Float32Array(n);
+    for (let c = 0; c < ch; c++) { const d = buf.getChannelData(c); for (let i = 0; i < n; i++) out[i] += d[i] / ch; }
+    return out;
+  }
+  function decode(ab) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return Promise.reject(new Error('unsupported'));
+    const ctx = new AC();
+    return new Promise((res, rej) => { const p = ctx.decodeAudioData(ab, res, rej); if (p && p.catch) p.catch(rej); })
+      .finally(() => { try { ctx.close(); } catch (e) {} });
+  }
+  const ERR = {
+    short: '録音が短すぎます。5秒以上の録音を選んでください。',
+    quiet: '音が小さすぎます。赤ちゃんの近く（30cmほど）で録音してみてください。',
+    nocry: '泣き声が見つかりませんでした。赤ちゃんの声がはっきり入った録音で試してください。'
+  };
+  function accept(A, msg, isSample) {
+    if (A.error) { setStatus(ERR[A.error], true); return; }
+    state.A = A; state.sample = isSample;
+    setStatus(msg);
+    render();
+  }
+
+  $('file').addEventListener('change', async e => {
+    const file = e.target.files && e.target.files[0]; if (!file) return;
+    setStatus('解析しています…');
+    try {
+      const ab = await file.arrayBuffer();
+      const buf = await decode(ab);
+      const A = analyze(toMono(buf), buf.sampleRate);
+      accept(A, file.name + '（' + buf.duration.toFixed(1) + '秒）を解析しました。', false);
+    } catch (err) {
+      setStatus('この形式は読み込めませんでした。m4a・mp3・wav・webm などの音声ファイルを選んでください。', true);
+    }
+    e.target.value = '';
+  });
+  function runSample() {
+    const s = synth();
+    accept(analyze(s.x, s.sr), '合成したサンプル音（16秒）で動作を確認しています。', true);
+  }
+  let rec = null;
+  async function toggleRec() {
+    if (rec) { rec.stop(); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+      setStatus('このブラウザでは録音できません。録音済みのファイルを選んでください。', true); return;
+    }
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    } catch (e) {
+      setStatus('マイクを使えませんでした。ブラウザのマイク許可を確認してください。録音済みのファイルを選ぶこともできます。', true); return;
+    }
+    const chunks = [], mr = new MediaRecorder(stream);
+    const AC = window.AudioContext || window.webkitAudioContext, ctx = new AC();
+    try { ctx.resume(); } catch (e) {}
+    const an = ctx.createAnalyser(); an.fftSize = 1024;
+    ctx.createMediaStreamSource(stream).connect(an);
+    const data = new Float32Array(an.fftSize), t0 = Date.now(), btn = $('recBtn'), meter = $('meter');
+    let timer = 0;
+    mr.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    mr.onstop = async () => {
+      clearInterval(timer); stream.getTracks().forEach(t => t.stop()); try { ctx.close(); } catch (e) {}
+      btn.textContent = '● 録音する'; btn.classList.remove('recording'); meter.hidden = true; rec = null;
+      setStatus('解析しています…');
+      try {
+        const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
+        const buf = await decode(await blob.arrayBuffer());
+        accept(analyze(toMono(buf), buf.sampleRate), '録音（' + buf.duration.toFixed(1) + '秒）を解析しました。', false);
+      } catch (e) { setStatus('録音を読み込めませんでした。もう一度録音してください。', true); }
+    };
+    mr.start(); rec = mr;
+    btn.textContent = '■ 止めて解析'; btn.classList.add('recording'); meter.hidden = false;
+    setStatus('録音中です。10秒以上、泣き声を入れてください（最長30秒）。');
+    timer = setInterval(() => {
+      an.getFloatTimeDomainData(data);
+      let s = 0; for (let i = 0; i < data.length; i++) s += data[i] * data[i];
+      $('meterFill').style.width = Math.round(Math.min(1, Math.sqrt(s / data.length) * 6) * 100) + '%';
+      const sec = (Date.now() - t0) / 1000;
+      $('recTime').textContent = Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
+      if (sec >= 30) mr.stop();
+    }, 100);
+  }
+  $('recBtn').addEventListener('click', toggleRec);
+  $('sampleBtn').addEventListener('click', runSample);
+  $('groups').addEventListener('change', e => {
+    if (e.target.name === 'age') { try { localStorage.setItem('cryNaviAge', e.target.value); } catch (x) {} }
+    render();
+  });
+  $('clearBtn').addEventListener('click', () => {
+    document.querySelectorAll('#groups input').forEach(i => { i.checked = false; });
+    try { localStorage.removeItem('cryNaviAge'); } catch (x) {}
+    render();
+  });
+
+  let raf = 0;
+  const redraw = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(drawWave); };
+  if (window.ResizeObserver) new ResizeObserver(redraw).observe($('cv').parentElement);
+  try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw); } catch (e) {}
+  new MutationObserver(redraw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  runSample();
+})();
+</script>
+</body>
+</html>
+
+</body></html>
